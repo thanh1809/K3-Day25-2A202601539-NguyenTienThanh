@@ -1,30 +1,9 @@
-from __future__ import annotations
-
-import argparse
-import json
-from pathlib import Path
-
-
-def generate_report_content(metrics: dict[str, object]) -> str:
-    avail = float(metrics.get("availability", 0.0))
-    err_rate = float(metrics.get("error_rate", 0.0))
-    p50 = float(metrics.get("latency_p50_ms", 0.0))
-    p95 = float(metrics.get("latency_p95_ms", 0.0))
-    p99 = float(metrics.get("latency_p99_ms", 0.0))
-    fb_rate = float(metrics.get("fallback_success_rate", 0.0))
-    hit_rate = float(metrics.get("cache_hit_rate", 0.0))
-    cb_opens = int(metrics.get("circuit_open_count", 0))
-    rec_time = metrics.get("recovery_time_ms")
-    rec_time_str = f"{rec_time:.2f} ms" if isinstance(rec_time, (int, float)) else "N/A"
-    cost = float(metrics.get("estimated_cost", 0.0))
-    cost_saved = float(metrics.get("estimated_cost_saved", 0.0))
-
-    report = f"""# Báo cáo Kỹ thuật Độ tin cậy Hệ thống (Reliability Engineering Report)
+# Báo cáo Kỹ thuật Độ tin cậy Hệ thống (Reliability Engineering Report)
 
 **Dự án:** LLM Agent Reliability Gateway & Resilience Engineering  
 **Tác giả:** Nguyễn Tiến Thành  
 **Mã sinh viên:** 2A202601539  
-**Ngày hoàn thành:** 28/08/2026  
+**Ngày hoàn thành:** 27/08/2026  
 **Môi trường thử nghiệm:** Python 3.13 / Docker Redis 7-Alpine / Pytest 9.1.1  
 
 ---
@@ -59,35 +38,35 @@ Hệ thống Gateway phân tán được thiết kế theo mô hình phòng th�
                        +---------------------------+
                        |    Privacy Guard Check    |
                        +---------------------------+
-                         /                       \\
-            (Sensitive) /                         \\ (Safe to Cache)
+                         /                       \
+            (Sensitive) /                         \ (Safe to Cache)
                        v                           v
                [ Bypass Cache ]           +-------------------+
                        |                  |   Cache Lookup    |
                        |                  | (Memory / Redis)  |
                        |                  +-------------------+
-                       |                    /               \\
-                       |            (Hit)  /                 \\ (Miss)
+                       |                    /               \
+                       |            (Hit)  /                 \ (Miss)
                        |                  v                   v
                        |          [ Return Cached ]   +--------------------+
                        |          [ Score >= Thresh]  | Circuit Breaker A  |
                        |                              |  (Primary Provider)|
                        |                              +--------------------+
-                       |                                /        \\
-                       |                       (Closed)/          \\ (Open / Failed)
+                       |                                /        \
+                       |                       (Closed)/          \ (Open / Failed)
                        |                              v            v
                        |                      [ Provider A ]   +--------------------+
                        |                       (Success?)      | Circuit Breaker B  |
-                       |                       /        \\      |  (Backup Provider) |
-                       |                (Yes) /          \\(No) +--------------------+
-                       |                     v            \\       /        \\
-                       +--------------> [ Save Cache ]     \\ (Closed)     \\ (Open/Fail)
+                       |                       /        \      |  (Backup Provider) |
+                       |                (Yes) /          \(No) +--------------------+
+                       |                     v            \       /        \
+                       +--------------> [ Save Cache ]     \ (Closed)     \ (Open/Fail)
                                              |              v    v          v
                                              |        [ Provider B ]  +--------------------+
                                              |         (Success?)     |  Static Fallback   |
-                                             |         /        \\     | (Degraded Message) |
-                                             |  (Yes) /          \\(No)+--------------------+
-                                             |       v            \\          |
+                                             |         /        \     | (Degraded Message) |
+                                             |  (Yes) /          \(No)+--------------------+
+                                             |       v            \          |
                                              +-> [ Return Resp ]   +---------> v
                                                  (Primary/Fallback)     [ Return 200 Degraded ]
 ```
@@ -112,10 +91,10 @@ Hệ thống Gateway phân tán được thiết kế theo mô hình phòng th�
 | Chỉ số (SLI) | Mục tiêu (SLO Target) | Kết quả thực tế | Đạt chuẩn (Met?) | Đánh giá kỹ thuật |
 |---|---|---:|:---:|---|
 | **Availability** | >= 99.0% (Kịch bản chuẩn) | **100.0%** (all_healthy) | **MET** | Không có lỗi nào xảy ra khi hệ sinh thái provider hoạt động ổn định. |
-| **Latency P95** | < 2500 ms | **{p95:.2f} ms** | **MET** | Đạt thời gian phản hồi vượt mức kỳ vọng gấp ~8 lần so với trần SLO. |
+| **Latency P95** | < 2500 ms | **315.56 ms** | **MET** | Đạt thời gian phản hồi vượt mức kỳ vọng gấp ~8 lần so với trần SLO. |
 | **Fallback Success Rate** | >= 95.0% (Khi Primary lỗi) | **100.0%** (primary_timeout_100) | **MET** | 100% lưu lượng chuyển mạch mượt mà sang Backup Provider mà không rớt request. |
-| **Cache Hit Rate** | >= 10.0% | **{hit_rate * 100:.2f}%** | **MET** | Tỷ lệ cache hit thực tế đạt rất cao, giúp tiết kiệm chi phí gọi LLM. |
-| **Recovery Time** | < 5000 ms | **{rec_time_str}** | **MET** | Mạch tự động probe và khôi phục về CLOSED chỉ sau ~0.7-0.8 giây. |
+| **Cache Hit Rate** | >= 10.0% | **43.75%** | **MET** | Tỷ lệ cache hit thực tế đạt rất cao, giúp tiết kiệm chi phí gọi LLM. |
+| **Recovery Time** | < 5000 ms | **779.63 ms** | **MET** | Mạch tự động probe và khôi phục về CLOSED chỉ sau ~0.7-0.8 giây. |
 
 ---
 
@@ -125,18 +104,18 @@ Dữ liệu được trích xuất trực tiếp từ `reports/metrics.json` và
 
 | Chỉ số (Metric) | Giá trị thực nghiệm | Ý nghĩa & Phân tích |
 |---|---:|---|
-| `total_requests` | {metrics.get('total_requests', 0)} | Tổng số lượng request chạy qua toàn bộ 4 kịch bản chaos simulation |
-| `availability` | {avail * 100:.2f}% | Tỷ lệ khả dụng tổng hợp (bao gồm cả kịch bản sập toàn bộ provider 100%) |
-| `error_rate` | {err_rate * 100:.2f}% | Tỷ lệ lỗi (chỉ xảy ra khi toàn bộ provider đồng loạt chết ở kịch bản cascade) |
-| `latency_p50_ms` | {p50:.2f} ms | Độ trễ trung vị (P50) toàn hệ thống |
-| `latency_p95_ms` | {p95:.2f} ms | Độ trễ phân vị 95th |
-| `latency_p99_ms` | {p99:.2f} ms | Độ trễ phân vị 99th (rất ổn định, không có đuôi trễ quá lớn) |
-| `fallback_success_rate` | {fb_rate * 100:.2f}% | Tỷ lệ cứu vãn thành công qua Backup Provider |
-| `cache_hit_rate` | {hit_rate * 100:.2f}% | Tỷ lệ câu hỏi được giải quyết trực tiếp từ Cache |
-| `circuit_open_count` | {cb_opens} | Tổng số lần Circuit Breaker kích hoạt mở mạch để bảo vệ hệ thống |
-| `recovery_time_ms` | {rec_time_str} | Thời gian trung bình để mạch tự phục hồi từ OPEN về CLOSED |
-| `estimated_cost` | ${cost:.6f} | Tổng chi phí thực tế tiêu tốn cho LLM Providers |
-| `estimated_cost_saved` | ${cost_saved:.6f} | Ước tính chi phí tiết kiệm được nhờ tầng Semantic Cache |
+| `total_requests` | 400 | Tổng số lượng request chạy qua toàn bộ 4 kịch bản chaos simulation |
+| `availability` | 74.25% | Tỷ lệ khả dụng tổng hợp (bao gồm cả kịch bản sập toàn bộ provider 100%) |
+| `error_rate` | 25.75% | Tỷ lệ lỗi (chỉ xảy ra khi toàn bộ provider đồng loạt chết ở kịch bản cascade) |
+| `latency_p50_ms` | 250.83 ms | Độ trễ trung vị (P50) toàn hệ thống |
+| `latency_p95_ms` | 315.56 ms | Độ trễ phân vị 95th |
+| `latency_p99_ms` | 319.37 ms | Độ trễ phân vị 99th (rất ổn định, không có đuôi trễ quá lớn) |
+| `fallback_success_rate` | 37.20% | Tỷ lệ cứu vãn thành công qua Backup Provider |
+| `cache_hit_rate` | 43.75% | Tỷ lệ câu hỏi được giải quyết trực tiếp từ Cache |
+| `circuit_open_count` | 27 | Tổng số lần Circuit Breaker kích hoạt mở mạch để bảo vệ hệ thống |
+| `recovery_time_ms` | 779.63 ms | Thời gian trung bình để mạch tự phục hồi từ OPEN về CLOSED |
+| `estimated_cost` | $0.057160 | Tổng chi phí thực tế tiêu tốn cho LLM Providers |
+| `estimated_cost_saved` | $0.175000 | Ước tính chi phí tiết kiệm được nhờ tầng Semantic Cache |
 
 ---
 
@@ -246,21 +225,3 @@ $ docker compose exec redis redis-cli HGETALL "rl:cache:9e413fd814eb"
 - [x] **Clean Code:** Đạt 100% chuẩn linting và formatting với `ruff check` (0 lỗi).
 - [x] **Redis Shared Cache:** Triển khai hoàn chỉnh trên Docker Redis, kiểm chứng đồng bộ đa instance.
 - [x] **Báo cáo và Metrics:** Xuất đầy đủ `reports/metrics.json`, `reports/metrics.csv`, `reports/final_report.md`, `reports/report.md` và `report.md`.
-"""
-    return report.strip() + "\n"
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--metrics", default="reports/metrics.json")
-    parser.add_argument("--out", default="reports/final_report.md")
-    args = parser.parse_args()
-    metrics = json.loads(Path(args.metrics).read_text(encoding="utf-8"))
-    content = generate_report_content(metrics)
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(content, encoding="utf-8")
-    print(f"wrote {args.out}")
-
-
-if __name__ == "__main__":
-    main()

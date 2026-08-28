@@ -9,7 +9,7 @@ providers:
     cost_per_1k_tokens: 0.006
 circuit_breaker:
   failure_threshold: 3
-  reset_timeout_seconds: 2
+  reset_timeout_seconds: 0.5
   success_threshold: 1
 cache:
   enabled: true
@@ -33,4 +33,11 @@ scenarios:
       primary: 0.5
   - name: all_healthy
     description: "Baseline — both providers healthy"
-    provider_overrides: {}
+    provider_overrides:
+      primary: 0.0
+      backup: 0.0
+  - name: cascade_failure_all_down
+    description: "Complete outage — both primary and backup fail 100%, static fallback active"
+    provider_overrides:
+      primary: 1.0
+      backup: 1.0
